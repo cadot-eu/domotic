@@ -1,0 +1,26 @@
+esphome:
+  name: repeater
+
+esp8266:
+  board: d1_wroom_02
+
+wifi:
+  ssid: "wifi"
+  password: "ababababab"
+  ap:
+    ssid: "wifi-repeater"
+    password: "ababababab"
+
+captive_portal:
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+http_request:
+  verify_ssl: false
+
+logger:
+
+api:
+  encryption:
+    key: !secret api_key

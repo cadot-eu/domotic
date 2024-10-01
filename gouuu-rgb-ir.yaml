@@ -1,0 +1,171 @@
+esphome:
+  name: goouuu-s1-rgb-ir
+  friendly_name: "Goouuu S1 RGB Ir"
+
+esp8266:
+  board: d1_wroom_02 # Utilisez le type de carte approprié pour WeMos D1 R2
+  mac_address: "00:00:00:00:00:55"
+
+# Enable logging
+logger:
+  #web_server:
+  #  port: 80
+
+  # pour wemos d1 mini, ne pas utiliser l'alimentation par usb sinon pas de réveil possible utiliser
+  # l'alimentation par broche 3.3v'
+  # deep_sleep:
+  #   run_duration: 30s
+  #   sleep_duration: 10s
+  #   id: deep_sleep_1
+
+web_server:
+  port: 80
+
+api:
+  encryption:
+    key: !secret api_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+http_request:
+  verify_ssl: false
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Esphome Fallback Hotspot"
+    password: "ViqcQUIQBfuI"
+
+# Configuration des sorties PWM pour les couleurs de la LED RGB
+output:
+  - platform: esp8266_pwm
+    id: output_red
+    pin: 12
+    frequency: 1000 Hz
+    inverted: true
+  - platform: esp8266_pwm
+    id: output_green
+    pin: 13
+    frequency: 1000 Hz
+    inverted: true
+  - platform: esp8266_pwm
+    id: output_blue
+    pin: 14
+    frequency: 1000 Hz
+    inverted: true
+
+# ajout d'un infrared sensor qui mesure la distance
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: GPIO0 #pin D0 sur gouuu
+      #mode: INPUT_PULLUP
+      inverted: True # Inversé car le FC-51 est souvent en état bas lorsqu'il détecte un obstacle
+    name: "Détection FC-51"
+    device_class: motion
+
+# Configuration de la lumière RGB avec PWM
+light:
+  - platform: rgb
+    id: ledrgb # Assurez-vous que cet ID est utilisé dans le switch
+    name: "RGB"
+    red: output_red
+    green: output_green
+    blue: output_blue
+    restore_mode: ALWAYS_ON
+
+# Switch pour passer la LED RGB aux couleurs spécifiques
+switch:
+  - platform: template
+    name: "Set RGB Light to Red"
+    turn_on_action:
+      - light.turn_on:
+          id: ledrgb
+          red: 1.0
+          green: 0.0
+          blue: 0.0
+    turn_off_action:
+      - light.turn_off:
+          id: ledrgb
+
+  - platform: template
+    name: "Set RGB Light to Green"
+    turn_on_action:
+      - light.turn_on:
+          id: ledrgb
+          red: 0.0
+          green: 1.0
+          blue: 0.0
+    turn_off_action:
+      - light.turn_off:
+          id: ledrgb
+
+  - platform: template
+    name: "Set RGB Light to Blue"
+    turn_on_action:
+      - light.turn_on:
+          id: ledrgb
+          red: 0.0
+          green: 0.0
+          blue: 1.0
+    turn_off_action:
+      - light.turn_off:
+          id: ledrgb
+
+# Définition des couleurs RGB via des sliders
+number:
+  - platform: template
+    id: red_color
+    name: "Define Red Color"
+    step: 1
+    min_value: 0
+    max_value: 255
+    initial_value: 0
+    mode: slider
+    set_action:
+      - light.turn_on:
+          id: ledrgb
+          red: !lambda "return x / 255.0;"
+
+  - platform: template
+    id: green_color
+    name: "Define Green Color"
+    step: 1
+    min_value: 0
+    max_value: 255
+    initial_value: 0
+    mode: slider
+    set_action:
+      - light.turn_on:
+          id: ledrgb
+          green: !lambda "return x / 255.0;"
+
+  - platform: template
+    id: blue_color
+    name: "Define Blue Color"
+    step: 1
+    min_value: 0
+    max_value: 255
+    initial_value: 0
+    mode: slider
+    set_action:
+      - light.turn_on:
+          id: ledrgb
+          blue: !lambda "return x / 255.0;"
+
+  - platform: template
+    id: brightness
+    name: "Define Brightness"
+    step: 1
+    min_value: 0
+    max_value: 255
+    initial_value: 255
+    mode: slider
+    set_action:
+      - light.turn_on:
+          id: ledrgb
+          brightness: !lambda "return x / 255.0;"
